@@ -55,13 +55,13 @@ void test('the list: sections, one main button per card, badges in words, where 
     assert.deepEqual(buttonsIn(page, card).map((node) => page.text(node)), ['接続']);
     const facts = page.nodes(card).filter((node) => node.type === 'li').map((node) => page.text(node));
     // 印・動く所・料金は、必ず文字で出る。
-    assert.match(facts[0], /^(あと 1 タップ（サインイン）|まだ誰も動かしていない)$/);
+    assert.match(facts[0], /^(ログインまたは新規登録が必要|まだ誰も動かしていない)$/);
     assert.match(facts[1], /^相手のサーバー（agent-\d\.example\.com）$/);
     assert.equal(facts[2], '無料');
     assert.match(page.text(card), /提供: test\.provider/);
   }
   const of = (name) => cards(page).find((card) => page.text(card).includes(name));
-  assert.match(page.text(of('Agent 2')), /あと 1 タップ（サインイン）/, '動いた物を、未サインインの人が見た時');
+  assert.match(page.text(of('Agent 2')), /ログインまたは新規登録が必要/, '動いた物を、未サインインの人が見た時');
   assert.match(page.text(of('Agent 1')), /押すだけで試せる.*道具 2 個/);
   assert.doesNotMatch(page.text(of('Agent 3')), /押すだけで試せる/);
   // 出どころと、申し出の窓口、Mac で動かす Agent への道。
@@ -267,7 +267,7 @@ void test('not signed in: pressing 接続 goes to sign-in, and the detail screen
   const server = mcpServer();
   const w = await world(t, { [hostOf(1)]: server, [hostOf(2)]: mcpServer() });
   const detailPath = `/noah/ready/agent?id=${encodeURIComponent(familyId(1))}`;
-  const { session, ui } = browser(w, null);
+  const { session, ui } = browser(w, `noah-browser:${'a'.repeat(64)}`);
   const page = ui.mount(LIST);
   await page.flush();
   const [connect] = buttonsIn(page, cards(page).find((node) => page.text(node).includes('Agent 1')));
@@ -483,7 +483,9 @@ void test('what the button shows for every state of a connection', () => {
   assert.deepEqual(show('blocked', { error: 'この Agent は、取り下げられました。使えません。' }), { label: null, disabled: true, action: null, note: 'この Agent は、取り下げられました。使えません。' });
   assert.deepEqual(show(null, { listed: false }), { label: null, disabled: true, action: null, note: 'この Agent は、今はつなげません。' });
   // 印は、必ず文字。
-  assert.deepEqual(['one_click', 'taps', 'setup', 'unverified', 'blocked'].map((badge) => view.noahBadgeText({ badge, taps: 1, need: 'サインイン' })), ['1 クリック', 'あと 1 タップ（サインイン）', '準備が必要（サインイン）', 'まだ誰も動かしていない', 'つなげません']);
+  assert.deepEqual(['one_click', 'taps', 'setup', 'unverified', 'blocked'].map((badge) => view.noahBadgeText({ badge, taps: 1, need: badge === 'one_click' ? null : 'サインイン' })), ['1 クリック', 'ログインまたは新規登録が必要', '準備が必要（サインイン）', 'まだ誰も動かしていない', 'つなげません']);
+  assert.equal(view.noahBadgeText({ badge: 'one_click', taps: 0, need: null }, true), 'ログインまたは新規登録が必要');
+  assert.equal(view.noahBadgeText({ badge: 'taps', taps: 1, need: '許可' }), 'あと 1 タップ（許可）');
   assert.deepEqual([view.noahPriceText({ model: 'free' }), view.noahPriceText({ model: 'one_time', amountMinor: 3000 })], ['無料', '¥3,000']);
 });
 

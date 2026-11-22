@@ -54,7 +54,8 @@ export const NOAH_READY_TEXT = {
 export const noahSendsToText = (host: string) => `入力は ${host} へ送られます。Noah が送るのは、あなたが入力した内容だけです。`;
 
 /** カードの印（色だけで分けない。必ず文字で出す）。 */
-export function noahBadgeText(connect: Pick<NoahReadyItem['connect'], 'badge' | 'taps' | 'need'>): string {
+export function noahBadgeText(connect: Pick<NoahReadyItem['connect'], 'badge' | 'taps' | 'need'>, needsAccount = false): string {
+  if ((connect.badge === 'one_click' || connect.badge === 'taps') && (needsAccount || connect.need === 'サインイン')) return 'ログインまたは新規登録が必要';
   if (connect.badge === 'one_click') return '1 クリック';
   if (connect.badge === 'taps') return `あと ${connect.taps} タップ${connect.need ? `（${connect.need}）` : ''}`;
   if (connect.badge === 'setup') return `準備が必要${connect.need ? `（${connect.need}）` : ''}`;

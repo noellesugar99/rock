@@ -1,5 +1,7 @@
 ## 2026-11-22
 
+- Noahの利用開始画面にパスキー新規登録とログインを表示し、完了後は選んだAgentの詳細へ復帰。未ログインの接続には固定のタップ数を表示しない（task 74・96）。
+
 - 移行先privateリポジトリのCodeQLにActions読取権限を追加し、全履歴SPIDERの検査時間を有界で延長。固定版スキャナ・既存検知規則・失敗時の拒否は維持（[PR #3](https://github.com/iceiceice999/rock/pull/3)）。
 
 - Noahの通常タップに低遅延のポコ音・振動・押下反応と設定内の試聴を追加し、評価数のないMCP Registry表示をカードから除去。接続成功音・既存ミュート・元サイト評価を保持（task100、[PR #3](https://github.com/iceiceice999/rock/pull/3)）。

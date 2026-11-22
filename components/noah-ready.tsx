@@ -17,12 +17,12 @@ import NoahCard from './noah-card';
 import base from './noah-service.module.css';
 import styles from './noah-ready.module.css';
 
-type ListReply = { items?: NoahReadyItem[]; nextCursor?: string | null; counts?: { ran: number; new: number }; ownerScope?: string | null; error?: string };
+type ListReply = { items?: NoahReadyItem[]; nextCursor?: string | null; counts?: { ran: number; new: number }; ownerScope?: string | null; accountSignedIn?: boolean; error?: string };
 type Mine = NoahReadyConnection & { agentId: string; name: string; placeLabel: string | null };
 /** つなげる数を、料金ごとのカードの数にしている時だけ、入口が返す（task 113）。 */
 type Cards = { live: number; limit: number };
-type Page = { state: 'loading' | 'ready' | 'closed' | 'error'; items: NoahReadyItem[]; nextCursor: string | null; counts: { ran: number; new: number } | null; ownerScope: string | null; more: boolean };
-const EMPTY: Page = { state: 'loading', items: [], nextCursor: null, counts: null, ownerScope: null, more: false };
+type Page = { state: 'loading' | 'ready' | 'closed' | 'error'; items: NoahReadyItem[]; nextCursor: string | null; counts: { ran: number; new: number } | null; ownerScope: string | null; accountSignedIn: boolean; more: boolean };
+const EMPTY: Page = { state: 'loading', items: [], nextCursor: null, counts: null, ownerScope: null, accountSignedIn: false, more: false };
 
 /** shelf: 一番上に出す棚（app/noah/ready/page.tsx が components/noah-shelf.tsx を渡す）。探している間は出さない。 */
 export default function NoahReady({ shelf, initialQuery = '', onQueryChange }: { shelf?: ReactNode; initialQuery?: string; onQueryChange?: (query:string)=>void } = {}) {
@@ -57,7 +57,7 @@ export default function NoahReady({ shelf, initialQuery = '', onQueryChange }: {
       if (current !== epoch.current) return;
       if (status === 404) { setPage({ ...EMPTY, state: 'closed' }); return; }
       if (status !== 200 || !Array.isArray(body.items)) { setPage({ ...EMPTY, state: 'error' }); return; }
-      setPage({ state: 'ready', items: body.items, nextCursor: body.nextCursor ?? null, counts: body.counts ?? null, ownerScope: body.ownerScope ?? null, more: false });
+      setPage({ state: 'ready', items: body.items, nextCursor: body.nextCursor ?? null, counts: body.counts ?? null, ownerScope: body.ownerScope ?? null, accountSignedIn: body.accountSignedIn ?? !!body.ownerScope, more: false });
     }).catch(() => { if (current === epoch.current) setPage({ ...EMPTY, state: 'error' }); });
     // 読み直すのは、探す語・絞り込み・やり直しが変わった時。
     // oxlint-disable-next-line react-hooks/exhaustive-deps
@@ -86,7 +86,7 @@ export default function NoahReady({ shelf, initialQuery = '', onQueryChange }: {
   }, [page.nextCursor, page.more]);
 
   // サインイン済みの時だけ、その本人の接続を読む（一覧のカードの「頼む」と、上の段に使う）。
-  const scope = page.ownerScope, signedIn = scope !== null;
+  const scope = page.ownerScope;
   useEffect(() => {
     if (scope === null) return;
     let stopped = false;
@@ -107,7 +107,7 @@ export default function NoahReady({ shelf, initialQuery = '', onQueryChange }: {
     { ...connection, agentId: item.id, name: item.name, placeLabel: item.connect.placeLabel },
     ...old.filter((other) => other.agentId !== item.id),
   ]);
-  const cards = (items: NoahReadyItem[]) => <div className={styles.cards}>{items.map((item) => <NoahCard key={item.id} item={item} signedIn={signedIn} ownerScope={page.ownerScope} connection={connectionOf(item.id)} onChange={changed(item)} />)}</div>;
+  const cards = (items: NoahReadyItem[]) => <div className={styles.cards}>{items.map((item) => <NoahCard key={item.id} item={item} signedIn={page.accountSignedIn} ownerScope={scope} connection={connectionOf(item.id)} onChange={changed(item)} />)}</div>;
   const ran = page.items.filter((item) => item.section === 'ran'), fresh = page.items.filter((item) => item.section === 'new');
   // 切っていない接続。つながっている物と、そうでない物（失敗・途中・取り下げ）を、分けて出す（見出しと中身を、合わせる）。
   const live = mine.filter((connection) => connection.state !== 'disconnected');

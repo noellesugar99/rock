@@ -1,4 +1,12 @@
 export const NOAH_ACCESS_MESSAGES: Record<string, readonly [string, string, string, string, string]> = {
+  '利用開始': ['Get started', '开始使用', '시작하기', 'Empezar', 'البدء'],
+  'パスキーで新しく始める': ['Start with a passkey', '用通行密钥注册', '패스키로 시작하기', 'Empezar con una llave de acceso', 'ابدأ بمفتاح مرور'],
+  'ユーザーIDとパスワードで新規登録': ['Sign up with a user ID and password', '使用用户 ID 和密码注册', '사용자 ID와 비밀번호로 가입', 'Registrarse con ID de usuario y contraseña', 'سجّل بمعرّف مستخدم وكلمة مرور'],
+  'ログインまたは新規登録が必要': ['Log in or sign up to connect', '登录或注册后连接', '연결하려면 로그인 또는 가입', 'Inicia sesión o regístrate para conectar', 'سجّل الدخول أو أنشئ حسابًا للاتصال'],
+  '復旧コードを保存したので戻る': ['Go back after saving the recovery code', '已保存恢复代码，返回', '복구 코드를 저장했으므로 돌아가기', 'Volver tras guardar el código de recuperación', 'ارجع بعد حفظ رمز الاسترداد'],
+  '利用開始に戻る': ['Back to get started', '返回开始页面', '시작 화면으로 돌아가기', 'Volver al inicio', 'العودة إلى شاشة البدء'],
+  'ほかのログイン方法': ['Other login methods', '其他登录方式', '다른 로그인 방법', 'Otros métodos de inicio de sesión', 'طرق تسجيل دخول أخرى'],
+  'ChatGPTでログイン': ['Log in with ChatGPT', '使用 ChatGPT 登录', 'ChatGPT로 로그인', 'Iniciar sesión con ChatGPT', 'سجّل الدخول باستخدام ChatGPT'],
   '保存先を準備しています…': ['Preparing your workspace…', '正在准备保存空间…', '저장 공간 준비 중…', 'Preparando tu espacio…', 'جارٍ تجهيز مساحة الحفظ…'],
   '保存先を開けませんでした。もう一度お試しください。': ['Could not open your workspace. Please try again.', '无法打开保存空间，请重试。', '저장 공간을 열지 못했습니다. 다시 시도해 주세요.', 'No se pudo abrir tu espacio. Inténtalo de nuevo.', 'تعذر فتح مساحة الحفظ. حاول مرة أخرى.'],
   'このブラウザへの保存について': ['Saving in this browser', '在此浏览器中保存', '이 브라우저에 저장하기', 'Guardar en este navegador', 'الحفظ في هذا المتصفح'],

@@ -88,6 +88,7 @@ export function screen(options = {}) {
   context.document = { hidden:false, addEventListener(){}, removeEventListener(){}, ...options.document };
   if(options.document)context.document=Object.assign(options.document,{addEventListener:options.document.addEventListener??(()=>{}),removeEventListener:options.document.removeEventListener??(()=>{})});
   context.window = {
+    ...(options.passkeys ? { PublicKeyCredential: class {}, isSecureContext: true } : {}),
     sessionStorage: { getItem: (key) => storage.get(key) ?? null, setItem: (key, value) => { storage.set(key, String(value)); }, removeItem: (key) => { storage.delete(key); } },
     location: { assign: (href) => { visits.push(String(href)); }, replace: (href) => { visits.push(String(href)); }, href: `https://noah.test/noah${options.search??''}`, hash: '', search: options.search ?? '', origin: 'https://noah.test' },
     history: {state:null,replaceState(_state,_title,href){ const url=new URL(href,'https://noah.test'); context.window.location.href=url.href;context.window.location.search=url.search;}},
@@ -112,7 +113,7 @@ export function screen(options = {}) {
       if (id.endsWith('.module.css')) return { default: new Proxy({}, { get: (_, name) => String(name) }) };
       if (options.modules?.[id]) return options.modules[id];
       if (id === '@/lib/noah-collection') return collection;
-      if (id === 'next/navigation') return { useSearchParams: () => new URLSearchParams(options.search ?? '') };
+      if (id === 'next/navigation') return { useSearchParams: () => new URLSearchParams(options.search ?? ''), usePathname: () => options.pathname ?? '/noah' };
       if(id.startsWith('./')&&options.modules?.[`@/components/${id.slice(2)}`])return options.modules[`@/components/${id.slice(2)}`];
       if(id==='./noah-locale')return {useNoahLocale:()=>({t:(text,values)=>noahTranslate(options.locale??'ja',text,values),locale:options.locale??'ja'}),NoahLanguageSetting:()=>null};
       if(id==='@/lib/noah-operation-labels')return operationLabels;
@@ -129,6 +130,7 @@ export function screen(options = {}) {
       if (id === '@/lib/noah-intake-import-parts') return importParts;
       // 詳細の頁へのリンクを作るだけの式（集めたAgentのカードの「Noahで開く」。task 121）。
       if (id === '@/lib/noah-ready-view') return readyView;
+      if (id === '@/components/noah-access') return load('components/noah-access.tsx');
       if (id === '@/lib/noah-project-view') return load('lib/noah-project-view.ts');
 
       if (id === '@/lib/noah-agent-share') return agentShare;

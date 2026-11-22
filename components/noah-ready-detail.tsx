@@ -23,7 +23,7 @@ import NoahPinExtras from './noah-pin-extras';
 import base from './noah-service.module.css';
 import styles from './noah-ready.module.css';
 
-type Detail = NoahReadyItem & { listed: boolean; website: string | null; connection: NoahReadyConnection | null; ownerScope: string | null; error?: string };
+type Detail = NoahReadyItem & { listed: boolean; website: string | null; connection: NoahReadyConnection | null; ownerScope: string | null; accountSignedIn?: boolean; error?: string };
 type Loaded = { state: 'loading' } | { state: 'missing' } | { state: 'error' } | { state: 'ready'; detail: Detail };
 
 /** tool: 最初に選んでおく道具（棚のカードから来た時。/noah/ready/agent?tool=…）。from: そのカードの ID（試行の本人の報告を、下に出す）。 */
@@ -61,10 +61,11 @@ export default function NoahReadyDetail({ id, tool = null, from = null, internal
     {loaded.state === 'error' && <div className={base.empty} role="alert"><p>{t(NOAH_READY_TEXT.unavailable)}</p><button type="button" onClick={() => setAttempt((n) => n + 1)}>{t("読み直す")}</button></div>}
   </main>;
 
-  const { detail } = loaded, signedIn = detail.ownerScope !== null;
+  const { detail } = loaded, hasWorkspace = detail.ownerScope !== null;
+  const signedIn = detail.accountSignedIn ?? hasWorkspace;
   const live = connection && connection.state !== 'disconnected' ? connection : null;
   const checked = noahCheckedText(detail.checkedAt);
-  const facts = [noahBadgeText(detail.connect), detail.connect.placeLabel, noahPriceText(detail.connect.price), noahUsersText(detail.users), detail.tools > 0 ? `道具 ${detail.tools} 個` : null].filter((text): text is string => !!text);
+  const facts = [noahBadgeText(detail.connect, !signedIn && !live), detail.connect.placeLabel, noahPriceText(detail.connect.price), noahUsersText(detail.users), detail.tools > 0 ? `道具 ${detail.tools} 個` : null].filter((text): text is string => !!text);
 
   async function cut(current: NoahReadyConnection) {
     if (cutting) return;
@@ -109,8 +110,8 @@ export default function NoahReadyDetail({ id, tool = null, from = null, internal
     </article>
 
     {live?.state === 'connected' && <NoahAsk agentId={detail.id} agentName={detail.name} key={live.id} connectionId={live.id} initialTool={tool} ownerScope={detail.ownerScope} onUnusable={() => refresh(live)} onAsked={() => setAsked((n) => n + 1)} />}
-    {/* 仕事（この Agent への依頼と成果）。つないでいない時・切った後も、前に受け取った成果を出す。サインインしていない人には、出さない。 */}
-    {signedIn && <div id="noah-agent-work" tabIndex={-1}><NoahWorkList key={`work:${detail.id}`} agentId={detail.id} ownerScope={detail.ownerScope} refresh={asked} /></div>}
+    {/* 仕事（この Agent への依頼と成果）。ブラウザの保存先も含め、本人の成果を出す。 */}
+    {hasWorkspace && <div id="noah-agent-work" tabIndex={-1}><NoahWorkList key={`work:${detail.id}`} agentId={detail.id} ownerScope={detail.ownerScope} refresh={asked} /></div>}
     <details className={styles.agentDetails}>
       <summary>{t('Agentの詳細')}</summary>
       <p className={styles.description}>{detail.summary || t('（説明はありません）')}</p>
