@@ -26,6 +26,8 @@
 
 ## 3. 画面
 
+2026-11-22 スマホ UI 改修。ホームと Agent 検索は、2 列のカードに分野別の Lucide イラスト・名前・説明・実行条件を表示する。Agent の出典と評価は詳細画面で確認できる。「接続できる」「すべて」「外部で発見」を一覧の上部に表示し、提供元と並び順は Base UI ベースの下部シートから指定する。ホームのメニューは画面下部から開く。Gestalt に基づく最短列配置で、カードの高さと読み順を保つ。
+
 - `components/noah-shell.tsx`: 上の帯（`noah-service-shell.module.css` を書き直した）。ホームだけ全面の幅、他の画面は 1000 px の中央。
 - `components/noah-home.tsx` → `components/noah-pin-home.tsx`: グリッド（`GET /api/noah/pins`）。上の帯の検索（`/noah?q=`）は、取り込んだ一覧の語の検索（`GET /api/noah/intake?q=`）の結果を同じグリッドで出す。下まで来たら続きを読む。入口が 404 の時は今のタイムライン。
 - `components/noah-pin-grid.tsx`: グリッドと、保存先を選ぶ画面（`<dialog>`。本人のボードに印・新しいボードを作って保存）。列の数は `noahPinColumns`（幅 375 px で 2 列・最大 6 列）、置き方は `noahPinLayout`。

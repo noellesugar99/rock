@@ -126,11 +126,24 @@
 }
 .gridMenuPanel a:hover { background: #f7f5fa; }
 .gridBody { padding: 0 16px 48px; min-width: 0; }
-@media (max-width: 520px) {
-  .gridTopbar { gap: 5px; min-height: 58px; padding: 6px 8px; }
-  .gridBrand, .gridMenuButton, .gridAccount { padding-inline: 6px; }
-  .gridBrand strong, .gridMenuButton span { display: none; }
-  .gridBody { padding-inline: 8px; }
+@media (max-width: 600px) {
+  .gridTopbar { gap: 6px; min-height: 58px; padding: 6px 12px; backdrop-filter:none; }
+  .gridBrand, .gridAccount { padding-inline: 4px; }
+  .gridBrand strong { display: none; }
+  .gridSearch input { font-size:16px; }
+  .gridBody { padding:0 12px calc(80px + env(safe-area-inset-bottom)); }
+  .gridMenuButton {
+    position:fixed;
+    z-index:35;
+    inset:auto 12px calc(12px + env(safe-area-inset-bottom)) auto;
+    min-height:46px;
+    padding:0 14px;
+    background:#fff;
+    border:1px solid #e8e5ee;
+    box-shadow:0 3px 14px #29163c24;
+    font-weight:700;
+  }
+  .gridMenuPanel { inset:auto 12px calc(64px + env(safe-area-inset-bottom)) auto; max-height:calc(100dvh - 82px - env(safe-area-inset-bottom)); }
 }
 .body {
   display: grid;

@@ -2,13 +2,16 @@
 /**
  * ピンタレスト風のグリッド（task 115）。カードを 1 枚ずつ、今いちばん短い列に置く（同じなら左）。先に高さを測ってから置く。
  * 置き方は Pinterest の Gestalt（github.com/pinterest/gestalt、Apache-2.0）の Masonry の決まりを、小さく書き写した物（部品ごとは入れない）。
- * 列の数は、幅に合わせて 2〜6。カードは、分野の色の面に頭文字（Agent に画像が無いため）、名前、説明 2 行。「保存」でボードへ。
+ * 列の数は、幅に合わせて 2〜6。カードに分野の色と図柄、名前、説明、利用条件を載せる。「保存」でボードへ。
  * 仕様: docs/noah/spec-115-pin-grid.md の 3 章。
  */
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { MoreHorizontal, Check, Plus, X } from 'lucide-react';
-import { NOAH_PIN_TEXT, NOAH_PIN_TOPIC_LABELS, noahPinInitials } from '@/lib/noah-pins';
+import {
+  Bookmark, BookmarkCheck, BookOpen, BriefcaseBusiness, ChartNoAxesCombined, Check, ChevronRight,
+  CodeXml, FileText, Images, MapPin, MoreHorizontal, Plus, Search, Wallet, X,
+} from 'lucide-react';
+import { NOAH_PIN_TEXT, NOAH_PIN_TOPIC_LABELS, noahPinInitials, type NoahPinTopic } from '@/lib/noah-pins';
 import { noahCardHref, noahProjectHref } from '@/lib/noah-project-view';
 import { noahReadyDetailHref } from '@/lib/noah-ready-view';
 import styles from './noah-pins.module.css';
@@ -21,11 +24,15 @@ export type NoahPinView = NoahAgentCard;
 type BoardView = { id: string; name: string; visibility: 'private' | 'public'; pins: number; revision: number };
 
 const GAP = 16, MIN_COLUMN = 236;
+const TOPIC_ICONS = {
+  money: Wallet, dev: CodeXml, research: Search, work: BriefcaseBusiness, learn: BookOpen,
+  life: MapPin, data: ChartNoAxesCombined, media: Images, words: FileText, other: null,
+} satisfies Record<NoahPinTopic, typeof Wallet | null>;
 
 /** 幅から列の数と列の幅。スマホ（375 px）で 2 列、PC で 4〜6 列。 */
 export function noahPinColumns(width: number) {
   const columns = Math.min(6, Math.max(2, Math.floor((width + GAP) / (MIN_COLUMN + GAP))));
-  const gap = width < 520 ? 8 : GAP;
+  const gap = width < 520 ? 10 : GAP;
   return { columns, gap, columnWidth: Math.max(0, (width - gap * (columns - 1)) / columns) };
 }
 /** 高さの分かったカードを、順に、いちばん短い列（同じなら左）へ置く。高さが未だ分からないカードは、その場で止める（後ろを先に置かない）。 */
@@ -38,7 +45,7 @@ export function noahPinLayout(heights: readonly (number | undefined)[], columns:
     placed.push({ left: column * (columnWidth + gap), top: tops[column] });
     tops[column] += height + gap;
   }
-  return { placed, height: Math.max(0, ...tops) };
+  return { placed, height: Math.max(0, Math.max(...tops) - gap) };
 }
 
 export default function NoahPinGrid({ items, signedIn, ownerScope, onChange, onHide }: {
@@ -87,19 +94,31 @@ export default function NoahPinGrid({ items, signedIn, ownerScope, onChange, onH
   return <div ref={frame} className={styles.grid} style={{ height: layout.height }}>
     {width > 0 && items.map((item, index) => {
       const at = layout.placed[index];
+      const TopicIcon = TOPIC_ICONS[item.topic];
+      const SaveIcon = item.savedIn.length ? BookmarkCheck : Bookmark;
+      const status = item.run ? NOAH_COLLECTION_RUN_LABELS[item.run] : item.external ? '外部で発見' : item.oneTap ? 'すぐ試せる' : '接続して使う';
       return <article key={item.id} ref={(element) => { if (element) cards.current.set(item.id, element); else cards.current.delete(item.id); }}
         className={`${styles.pin} ${styles.tone}`} style={{ width: columnWidth, transform: at ? `translate(${at.left}px, ${at.top}px)` : undefined, visibility: at ? 'visible' : 'hidden' }}
         data-topic={item.topic} data-shape={item.shape} aria-label={item.name}>
         <a className={styles.face} href={noahCardHref(item) ?? noahReadyDetailHref(item.id)}>
-          <span className={styles.panel} aria-hidden="true"><span className={styles.initials}>{noahPinInitials(item.name)}</span><span className={styles.topicLabel}>{NOAH_PIN_TOPIC_LABELS[item.topic]}</span></span>
+          <span className={styles.panel}>
+            <span className={styles.initials} data-mobile-fallback={!TopicIcon || undefined} aria-hidden="true">{noahPinInitials(item.name)}</span>
+            {TopicIcon && <TopicIcon className={styles.topicIcon} strokeWidth={1.25} aria-hidden="true" />}
+            <span className={styles.topicLabel}>{NOAH_PIN_TOPIC_LABELS[item.topic]}</span>
+          </span>
           <strong className={styles.name}>{item.name}</strong>
           {item.summary && <span className={styles.summary}>{item.summary}</span>}
-          <small className={styles.meta}>{item.host ?? item.provider} · {item.external ? 'Noahで接続を確認' : item.run ? NOAH_COLLECTION_RUN_LABELS[item.run] : item.oneTap ? 'すぐ試せる' : '接続して使う'}</small>
+          <small className={styles.meta}>
+            <span className={styles.statusLabel} data-external={item.external || undefined}>{status}</span>
+            <span className={styles.provider}> · {item.host ?? item.provider}</span>
+            <ChevronRight className={styles.cardArrow} size={15} aria-hidden="true" />
+          </small>
         </a>
         {!item.external && <button type="button" className={styles.save} data-saved={item.savedIn.length > 0 || undefined} onClick={() => setSaving(item)} aria-label={`${item.name}を${item.savedIn.length ? '保存済み' : '保存'}`}>
-          {item.savedIn.length ? NOAH_PIN_TEXT.saved : NOAH_PIN_TEXT.save}
+          <SaveIcon className={styles.saveIcon} size={18} aria-hidden="true" />
+          <span className={styles.saveLabel}>{item.savedIn.length ? NOAH_PIN_TEXT.saved : NOAH_PIN_TEXT.save}</span>
         </button>}
-        <NoahAgentSourceRatings sources={item.sources} detailHref={`${noahProjectHref(item.feedbackId ?? item.id)}#ratings`} />
+        <div className={styles.cardRatings}><NoahAgentSourceRatings sources={item.sources} detailHref={`${noahProjectHref(item.feedbackId ?? item.id)}#ratings`} /></div>
         {signedIn && !item.external && onHide && <details className={styles.more}>
           <summary aria-label="その他の操作"><MoreHorizontal size={18} /></summary>
           <button type="button" onClick={() => onHide(item.id)}>{NOAH_PIN_TEXT.hide}</button>

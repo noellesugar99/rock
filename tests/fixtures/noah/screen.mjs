@@ -108,6 +108,7 @@ export function screen(options = {}) {
       if (id === 'react/jsx-runtime') return { jsx, jsxs: jsx, Fragment };
       if (id === 'next/link') return { default: 'a' };
       if (id === 'next/image') return { default: 'img' };
+      if (id === './ui/drawer') return { Drawer: Fragment, DrawerTrigger: 'button', DrawerContent: () => null, DrawerTitle: 'h2', DrawerClose: 'button' };
       if (id === 'lucide-react') return new Proxy({}, { get: (_, name) => String(name) });
       if (id.endsWith('.module.css')) return { default: new Proxy({}, { get: (_, name) => String(name) }) };
       if (options.modules?.[id]) return options.modules[id];

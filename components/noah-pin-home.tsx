@@ -1,17 +1,24 @@
 'use client';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { Check, SlidersHorizontal, X } from 'lucide-react';
 import { NOAH_COLLECTION_LABELS, NOAH_COLLECTION_SOURCES } from '@/lib/noah-collection';
 import NoahPinGrid, {type NoahPinView} from './noah-pin-grid';
 import NoahLoading from './noah-loading';
+import { Drawer, DrawerClose, DrawerContent, DrawerTitle, DrawerTrigger } from './ui/drawer';
 import styles from './noah-pins.module.css';
 type Page={items:NoahPinView[];nextCursor:string|null;ownerScope:string|null;total:number};
+const ORDERS = [['hot', 'おすすめ順'], ['new', '出た順']] as const;
+const SCOPES = [['noah', '接続できる'], ['', 'すべて'], ['discovered', '外部で発見']] as const;
 export default function NoahPinHome({fallback,searchQuery='',initialSource='noah',onClearQuery}:{fallback?:ReactNode;searchQuery?:string;initialSource?:string;onClearQuery?:()=>void}) {
   const params=useSearchParams();
   const [source,setSource]=useState(params.get('collectionSource')??initialSource),[attempt,setAttempt]=useState(0);
   const [order,setOrder]=useState<'hot'|'new'>('hot');
   const [state,setState]=useState<{key:string;page?:Page;error?:string;more?:boolean}>();
   const key=new URLSearchParams({q:searchQuery,source,order,cursor:'0'}).toString(),current=state?.key===key?state:undefined;
+  const provider = NOAH_COLLECTION_SOURCES.find(value => value === source);
+  const sourceName = provider && NOAH_COLLECTION_LABELS[provider];
+  const scope = sourceName ? 'discovered' : source;
   const generation=useRef(0);
   function chooseSource(value:string){
     setSource(value);
@@ -59,12 +66,39 @@ export default function NoahPinHome({fallback,searchQuery='',initialSource='noah
     else setState({...current,error:'非表示にできませんでした。再試行してください。'});
   }
   return <section id="noah-collection" className={styles.home} aria-label="Agent一覧">
-    <div className={styles.feedHeading}><h2>{source && source!=='noah'?'新しく見つかったAgent':'Agentを見つける'}</h2>{current?.page && <span>{current.page.total.toLocaleString('ja-JP')}件</span>}</div>
-    <div className={styles.filters} aria-label="Agentを絞り込む">{[['noah','接続できる'],['','すべて'],['discovered','新しく見つかった']].map(([value,label])=><button key={value} type="button" aria-pressed={source===value} onClick={()=>chooseSource(value)}>{label}</button>)}</div>
-    {source!=='noah' && <details className={styles.sourceFilter}><summary>提供元で絞り込む</summary><div className={styles.filters}>{NOAH_COLLECTION_SOURCES.map(value=><button key={value} type="button" aria-pressed={source===value} onClick={()=>chooseSource(value)}>{NOAH_COLLECTION_LABELS[value]}</button>)}</div></details>}
-    {source!=='noah' && <div className={styles.filters} aria-label="並び">
-      <button type="button" aria-pressed={order==='hot'} onClick={()=>setOrder('hot')}>おすすめ順</button>
-      <button type="button" aria-pressed={order==='new'} onClick={()=>setOrder('new')}>出た順</button>
+    <div className={styles.feedHeading}>
+      <h2>Agentを見つける</h2>
+      {current?.page && <span className={styles.resultCount}>{current.page.total.toLocaleString('ja-JP')}件</span>}
+      {source !== 'noah' && <Drawer showSwipeHandle>
+        <DrawerTrigger className={styles.filterTrigger} aria-label={sourceName ? `絞り込みと並び順 · ${sourceName}` : '絞り込みと並び順'} data-filtered={Boolean(sourceName || order !== 'hot') || undefined}>
+          <SlidersHorizontal size={17} aria-hidden="true" />{sourceName ?? '絞り込み'}
+        </DrawerTrigger>
+        <DrawerContent className={styles.filterDrawer}>
+          <div className={styles.filterDrawerHeader}>
+            <DrawerTitle className={styles.filterDrawerTitle}>絞り込み</DrawerTitle>
+            <DrawerClose className={styles.filterClose} aria-label="閉じる"><X size={20} aria-hidden="true" /></DrawerClose>
+          </div>
+          <div className={styles.filterDrawerOptions}>
+            <fieldset>
+              <legend>提供元</legend>
+              <div className={styles.filterChoices}>
+                <button type="button" aria-pressed={!sourceName} onClick={() => chooseSource(scope === '' ? '' : 'discovered')}>指定なし</button>
+                {NOAH_COLLECTION_SOURCES.map(value => <button key={value} type="button" aria-pressed={source === value} onClick={() => chooseSource(value)}>{NOAH_COLLECTION_LABELS[value]}</button>)}
+              </div>
+            </fieldset>
+            <fieldset>
+              <legend>並び順</legend>
+              <div className={styles.filterChoices}>{ORDERS.map(([value, label]) => <button key={value} type="button" aria-pressed={order === value} onClick={() => setOrder(value)}>{label}</button>)}</div>
+            </fieldset>
+          </div>
+          <DrawerClose className={styles.filterDone}><Check size={18} aria-hidden="true" />結果を見る</DrawerClose>
+        </DrawerContent>
+      </Drawer>}
+    </div>
+    <fieldset className={styles.scopeFilters} aria-label="Agentの種類">{SCOPES.map(([value, label]) => <button key={value} type="button" aria-pressed={value === scope} onClick={() => chooseSource(value)}>{label}</button>)}</fieldset>
+    {source !== 'noah' && <div className={styles.desktopFilters}>
+      <details className={styles.sourceFilter}><summary>提供元で絞り込む{sourceName && ` · ${sourceName}`}</summary><div className={styles.filters}>{NOAH_COLLECTION_SOURCES.map(value => <button key={value} type="button" aria-pressed={source === value} onClick={() => chooseSource(value)}>{NOAH_COLLECTION_LABELS[value]}</button>)}</div></details>
+      <fieldset className={styles.filters} aria-label="並び順">{ORDERS.map(([value, label]) => <button key={value} type="button" aria-pressed={order === value} onClick={() => setOrder(value)}>{label}</button>)}</fieldset>
     </div>}
     {(searchQuery && onClearQuery) && <button type="button" className={styles.recovery} onClick={()=>{onClearQuery?.();}}>検索条件をクリア</button>}
     {!current && <NoahLoading label="読み込んでいます…" variant="cards"/>}
